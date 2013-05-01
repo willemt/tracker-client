@@ -83,10 +83,10 @@ static void __do_peer_list(
             }
         }
 
-        if (peerid && ip && port != 0 && me->inforeader)
+        if (peerid && ip && port != 0)
         {
             assert(peerid_len == 20);
-            me->inforeader->add_peer(me->inforeader->udata, peerid, peerid_len, ip, ip_len, port);
+            me->funcs.add_peer(me->caller, peerid, peerid_len, ip, ip_len, port);
         }
         else
         {
@@ -184,7 +184,7 @@ int bt_trackerclient_read_tracker_response(
 
                 bencode_string_value(&benk, (const char **) &val, &len);
 
-                if (!me->inforeader) continue;
+//                if (!me->inforeader) continue;
 
                 for (ii = 0; ii < len; ii += 6, val += 6)
                 {
@@ -194,7 +194,7 @@ int bt_trackerclient_read_tracker_response(
 //                           val[3], ((int) val[4] << 8) | (int) val[5]);
 
                     sprintf(ip, "%d.%d.%d.%d", val[0], val[1], val[2], val[3]);
-                    me->inforeader->add_peer(me->inforeader->udata, NULL, 0, ip, strlen(ip),
+                    me->funcs.add_peer(me->caller, NULL, 0, ip, strlen(ip),
                                        ((int) val[4] << 8) | (int) val[5]);
                 }
             }

@@ -231,12 +231,13 @@ int bt_trackerclient_get_opt_int(void *bto, const char *key)
  *
  */
 void *bt_trackerclient_new(
-    bt_tracker_info_reader_i *inforeader)
+    bt_trackerclient_funcs_t *funcs
+    )
 {
     bt_trackerclient_t *me;
 
     me = calloc(1, sizeof(bt_trackerclient_t));
-    me->inforeader = inforeader;
+    memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
     return me;
 }
 
@@ -286,7 +287,7 @@ static int __get_tracker_request(void *bto)
         port = default_port;
     }
 
-    if (1 == me->net.tracker_connect(&me->net_udata, host, port, me->cfg.my_ip))
+    if (1 == me->funcs.tracker_connect(&me->caller, host, port, me->cfg.my_ip))
     {
         int rlen;
         char *request, *document, *response;
@@ -295,10 +296,10 @@ static int __get_tracker_request(void *bto)
 
         if (
                /*  send http request */
-               1 == me->net.tracker_send(&me->net_udata, request,
+               1 == me->funcs.tracker_send(&me->caller, request,
                                            strlen(request)) &&
                /*  receive http response */
-               1 == me->net.tracker_recv(&me->net_udata, &response, &rlen))
+               1 == me->funcs.tracker_recv(&me->caller, &response, &rlen))
         {
             int bencode_len;
 
@@ -352,9 +353,12 @@ void bt_trackerclient_step(void *bto, const long secs)
 /**
  * Set network functions
  */
+#if 0
 void bt_trackerclient_set_net_funcs(void *bto, bt_net_tracker_funcs_t * net)
 {
     bt_trackerclient_t *bt = bto;
 
     memcpy(&bt->net, net, sizeof(bt_net_tracker_funcs_t));
 }
+#endif
+

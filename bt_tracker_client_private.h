@@ -45,11 +45,11 @@ typedef struct
 
     bt_trackerclient_cfg_t cfg;
 
-    bt_net_tracker_funcs_t net;
+//    bt_net_tracker_funcs_t net;
+//    bt_tracker_info_reader_i *inforeader;
+    bt_trackerclient_funcs_t funcs;
 
-    bt_tracker_info_reader_i *inforeader;
-
-    void *net_udata;
+    void *caller;
 
     /** callback for initiating read of metafile */
     void (*func_read_metafile) (void *, char *, int len);
