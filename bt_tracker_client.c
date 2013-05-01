@@ -337,14 +337,17 @@ int bt_trackerclient_connect_to_tracker(void *bto)
     return __get_tracker_request(bt);
 }
 
-void bt_trackerclient_step(void *bto, const long secs)
+void bt_trackerclient_step(void *bto)
 {
     bt_trackerclient_t *self = bto;
+    time_t seconds;
+
+    seconds = time(NULL);
 
     /*  perform tracker request to get new peers */
-    if (self->last_tracker_request + self->cfg.tracker_scrape_interval < secs)
+    if (self->last_tracker_request + self->cfg.tracker_scrape_interval < seconds)
     {
-        self->last_tracker_request = secs;
+        self->last_tracker_request = seconds;
         __get_tracker_request(self);
     }
 }

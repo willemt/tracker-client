@@ -18,5 +18,4 @@ typedef struct
 
 } bt_trackerclient_funcs_t;
 
-
 int bt_trackerclient_set_opt_int(void *bto, const char *key, const int val);
