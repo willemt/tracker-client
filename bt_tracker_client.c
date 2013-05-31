@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define HTTP_PREFIX "http://"
 
-#if __WINDOWS__
+#if WIN32
 static char* strndup(const char* str, const unsigned int len)
 {
     char* new;
