@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define HTTP_PREFIX "http://"
 
+#if __WINDOWS__
 static char* strndup(const char* str, const unsigned int len)
 {
     char* new;
@@ -63,6 +64,7 @@ static char* strndup(const char* str, const unsigned int len)
     strncpy(new,str,len);
     return new;
 }
+#endif
 
 /**
  * Obtain hostname from URL */

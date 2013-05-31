@@ -24,6 +24,9 @@ main.c:
 	sh make-tests.sh > main.c
 
 tests: main.c bt_tracker_client.o bt_tracker_client_response_reader.c test_url.c url_encoder.c CuTest.c main.c $(BENCODE_DIR)/bencode.c 
+	if [[ uname == "MINGW32_NT-5.1" ]]; then \
+		CCFLAGS = $(CCFLAGS) -D__WINDOWS__; \
+	fi
 	$(CC) $(CCFLAGS) -o $@ $^
 	./tests
 	#gcov main.c test_bt_tracker_client.c bt_tracker_client.c
