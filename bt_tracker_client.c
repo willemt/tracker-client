@@ -55,6 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define HTTP_PREFIX "http://"
 
+#if WIN32
 static char* strndup(const char* str, const unsigned int len)
 {
     char* new;
@@ -63,6 +64,19 @@ static char* strndup(const char* str, const unsigned int len)
     strncpy(new,str,len);
     return new;
 }
+
+static int asprintf(char **resultp, const char *format, ...)
+{
+    char buf[1024];
+    va_list args;
+
+    va_start (args, format);
+    vsprintf(buf, format, args);
+    *resultp = strdup(buf);
+    va_end (args);
+    return 1;
+}
+#endif
 
 /**
  * Obtain hostname from URL */
@@ -98,17 +112,6 @@ char *url2port(
     return strndup(port, strpbrk(port, "/") - port);
 }
 
-static int asprintf(char **resultp, const char *format, ...)
-{
-    char buf[1024];
-    va_list args;
-
-    va_start (args, format);
-    vsprintf(buf, format, args);
-    *resultp = strdup(buf);
-    va_end (args);
-    return 1;
-}
 
 /**
  * Set a key-value option
@@ -162,12 +165,14 @@ int bt_trackerclient_set_opt_int(void *bto, const char *key, const int val)
 {
     bt_trackerclient_t *me = bto;
 
+#if 0
     if (!strcmp(key, "pwp_listen_port"))
     {
         me->cfg.pwp_listen_port = val;
         return 1;
     }
     else
+#endif
     if (!strcmp(key, "tracker_interval"))
     {
         me->interval = val;
@@ -241,6 +246,55 @@ void *bt_trackerclient_new(
     return me;
 }
 
+/*****f*
+ * FUNCTION
+ *  Connect to the uri.
+ * RETURN
+ *  1 if successful, 0 otherwise
+ ******/
+int bt_trackerclient_connect_to_uri(void* _me, const char* uri)
+{
+    if (0 == bt_trackerclient_supports_uri(_me,uri))
+    {
+        return 0;
+    }
+
+    if (0 == strncmp(uri,"udp://",6))
+    {
+        return 0;
+    }
+    else if (0 == strncmp(uri,"http://",7))
+    {
+        return 1;
+    }
+    else if (0 == strncmp(uri,"dht://",6))
+    {
+        return 1;
+    }
+}
+
+/*****f*
+ * FUNCTION
+ *  Tell if the uri is supported or not.
+ * RETURN
+ *  1 if the uri is supported, 0 otherwise
+ ******/
+int bt_trackerclient_supports_uri(void* _me, const char* uri)
+{
+    if (0 == strncmp(uri,"udp://",6))
+    {
+        return 0;
+    }
+    else if (0 == strncmp(uri,"http://",7))
+    {
+        return 1;
+    }
+    else if (0 == strncmp(uri,"dht://",6))
+    {
+        return 1;
+    }
+}
+
 /**
  * Release all memory used by the tracker client
  *
@@ -274,7 +328,7 @@ static void __build_tracker_request(bt_trackerclient_cfg_t * cfg, char **request
     free(info_hash_encoded);
 }
 
-static int __get_tracker_request(void *bto)
+static int __get_http_tracker_request(void *bto)
 {
     bt_trackerclient_t *me = bto;
     int status = 0;
@@ -334,7 +388,7 @@ int bt_trackerclient_connect_to_tracker(void *bto)
     assert(bt->cfg.tracker_url);
     assert(bt->cfg.info_hash);
     assert(bt->cfg.p_peer_id);
-    return __get_tracker_request(bt);
+    return __get_http_tracker_request(bt);
 }
 
 void bt_trackerclient_step(void *bto)
@@ -348,7 +402,7 @@ void bt_trackerclient_step(void *bto)
     if (self->last_tracker_request + self->cfg.tracker_scrape_interval < seconds)
     {
         self->last_tracker_request = seconds;
-        __get_tracker_request(self);
+        __get_http_tracker_request(self);
     }
 }
 
