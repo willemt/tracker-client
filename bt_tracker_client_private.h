@@ -27,10 +27,11 @@ typedef struct
     char *my_ip;
     /* sha1 hash of the info_hash */
     char *info_hash;
-    /* 20-byte self-designated ID of the peer */
-    char *p_peer_id;
 
-    char *tracker_url;
+    /* 20-byte self-designated ID of the peer */
+    char *my_peer_id;
+
+//    char *tracker_url;
 } bt_trackerclient_cfg_t;
 
 typedef struct
@@ -38,15 +39,13 @@ typedef struct
     /* how often we must send messages to the tracker */
     int interval;
 
-    char *tracker_url;
+    const char* uri;
 
     /* so that we remember when we last requested the peer list */
     time_t last_tracker_request;
 
     bt_trackerclient_cfg_t cfg;
 
-//    bt_net_tracker_funcs_t net;
-//    bt_tracker_info_reader_i *inforeader;
     bt_trackerclient_funcs_t funcs;
 
     void *caller;
@@ -61,3 +60,13 @@ int bt_trackerclient_read_tracker_response(
     bt_trackerclient_t* me,
     char *buf,
     int len);
+
+void thttp_dispatch_from_buffer(
+        void *me_,
+        const unsigned char* buf,
+        unsigned int len);
+
+void thttp_connected(void *me_);
+
+
+int net_tcp_connect(const char *host, const char *port);

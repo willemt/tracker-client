@@ -64,53 +64,7 @@ static char* strndup(const char* str, const unsigned int len)
     strncpy(new,str,len);
     return new;
 }
-
-static int asprintf(char **resultp, const char *format, ...)
-{
-    char buf[1024];
-    va_list args;
-
-    va_start (args, format);
-    vsprintf(buf, format, args);
-    *resultp = strdup(buf);
-    va_end (args);
-    return 1;
-}
 #endif
-
-/**
- * Obtain hostname from URL */
-char *url2host(
-    const char *url
-)
-{
-    const char *host;
-
-    host = url;
-
-    if (!strncmp(url, HTTP_PREFIX, strlen(HTTP_PREFIX)))
-    {
-        host += strlen("http://");
-    }
-
-    return strndup(host, strpbrk(host, ":/") - host);
-}
-
-char *url2port(
-    const char *url
-)
-{
-    const char *port, *host;
-
-    host = url;
-    if (!strncmp(url, HTTP_PREFIX, strlen(HTTP_PREFIX)))
-    {
-        host += strlen("http://");
-    }
-
-    port = strpbrk(host, ":/") + 1;
-    return strndup(port, strpbrk(port, "/") - port);
-}
 
 
 /**
@@ -127,8 +81,11 @@ char *url2port(
  * @param val_len Value's length
  *
  */
-int bt_trackerclient_set_opt(void *bto,
-                      const char *key, const char *val, const int val_len)
+int bt_trackerclient_set_opt(
+                      void *bto,
+                      const char *key,
+                      const char *val,
+                      const int val_len __attribute__((__unused__)))
 {
     bt_trackerclient_t *me = bto;
 
@@ -137,6 +94,7 @@ int bt_trackerclient_set_opt(void *bto,
         me->cfg.pwp_listen_port = atoi(val);
         return 1;
     }
+#if 0
     else if (!strcmp(key, "tracker_interval"))
     {
         me->interval = atoi(val);
@@ -148,6 +106,7 @@ int bt_trackerclient_set_opt(void *bto,
         strncpy(me->cfg.tracker_url, val, val_len);
         return 1;
     }
+#endif
     else if (!strcmp(key, "infohash"))
     {
         me->cfg.info_hash = strdup(val);
@@ -188,7 +147,10 @@ int bt_trackerclient_set_opt_int(void *bto, const char *key, const int val)
  *
  * @return string of value if applicable, otherwise NULL
  */
-char *bt_trackerclient_get_opt_string(void *bto, const char *key)
+#if 0
+char *bt_trackerclient_get_opt_string(
+        void *bto,
+        const char *key)
 {
     bt_trackerclient_t *me = bto;
 
@@ -204,7 +166,9 @@ char *bt_trackerclient_get_opt_string(void *bto, const char *key)
     {
         return NULL;
     }
+    return NULL;
 }
+#endif
 
 /**
  * Get a key-value option
@@ -242,106 +206,33 @@ void *bt_trackerclient_new(
     bt_trackerclient_t *me;
 
     me = calloc(1, sizeof(bt_trackerclient_t));
-    memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
+    if (funcs)
+        memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
     return me;
 }
 
-/*****f*
- * FUNCTION
- *  Connect to the uri.
- * RETURN
- *  1 if successful, 0 otherwise
- ******/
-int bt_trackerclient_connect_to_uri(void* _me, const char* uri)
-{
-    if (0 == bt_trackerclient_supports_uri(_me,uri))
-    {
-        return 0;
-    }
 
-    if (0 == strncmp(uri,"udp://",6))
-    {
-        return 0;
-    }
-    else if (0 == strncmp(uri,"http://",7))
-    {
-        return 1;
-    }
-    else if (0 == strncmp(uri,"dht://",6))
-    {
-        return 1;
-    }
-}
-
-/*****f*
- * FUNCTION
- *  Tell if the uri is supported or not.
- * RETURN
- *  1 if the uri is supported, 0 otherwise
- ******/
-int bt_trackerclient_supports_uri(void* _me, const char* uri)
-{
-    if (0 == strncmp(uri,"udp://",6))
-    {
-        return 0;
-    }
-    else if (0 == strncmp(uri,"http://",7))
-    {
-        return 1;
-    }
-    else if (0 == strncmp(uri,"dht://",6))
-    {
-        return 1;
-    }
-}
-
-/**
- * Release all memory used by the tracker client
- *
- * @todo add destructors
- */
-int bt_trackerclient_release(void *bto)
-{
-    free(bto);
-    return 1;
-}
-
-/*----------------------------------------------------------------------------*/
-
-static void __build_tracker_request(bt_trackerclient_cfg_t * cfg, char **request)
-{
-    bt_piece_info_t *bi;
-    char *info_hash_encoded;
-
-    bi = &cfg->pinfo;
-    info_hash_encoded = url_encode(cfg->info_hash);
-    asprintf(request,
-             "GET %s?info_hash=%s&peer_id=%s&port=%d&uploaded=%d&downloaded=%d&left=%d&event=started&compact=1 http/1.0\r\n"
-             "\r\n\r\n",
-             cfg->tracker_url,
-             info_hash_encoded,
-             cfg->p_peer_id,
-             cfg->pwp_listen_port,
-             0,
-             0,
-             bi->npieces * bi->piece_len);
-    free(info_hash_encoded);
-}
-
-static int __get_http_tracker_request(void *bto)
+#if 0
+static int __get_http_tracker_request(void *bto, const char* url)
 {
     bt_trackerclient_t *me = bto;
     int status = 0;
     char *host, *port, *default_port = "80";
 
-    host = url2host(me->cfg.tracker_url);
+    host = url2host(url);
 
-    if (!(port = url2port(me->cfg.tracker_url)))
+    if (!(port = url2port(url)))
     {
         port = default_port;
     }
 
-    if (1 == me->funcs.tracker_connect(&me->caller, host, port, me->cfg.my_ip))
+//    if (1 == me->funcs.tracker_connect(&me->caller, host, port, me->cfg.my_ip))
+    int sock;
+
+    sock = tcp_connect(host,port);
+//    if (1 == me->funcs.tracker_connect(&me->caller, host, port, me->cfg.my_ip))
+
+    if (0 != sock)
     {
         int rlen;
         char *request, *document, *response;
@@ -371,6 +262,80 @@ static int __get_http_tracker_request(void *bto)
         free(port);
     return status;
 }
+#endif
+
+/*****f*
+ * FUNCTION
+ *  Tell if the uri is supported or not.
+ * RETURN
+ *  1 if the uri is supported, 0 otherwise
+ ******/
+int bt_trackerclient_supports_uri(void* _me __attribute__((__unused__)), const char* uri)
+{
+    if (0 == strncmp(uri,"udp://",6))
+    {
+        return 0;
+    }
+    else if (0 == strncmp(uri,"http://",7))
+    {
+        return 1;
+    }
+    else if (0 == strncmp(uri,"dht://",6))
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+/*****f*
+ * FUNCTION
+ *  Connect to the uri.
+ * RETURN
+ *  1 if successful, 0 otherwise
+ ******/
+int bt_trackerclient_connect_to_uri(void* me_, const char* uri)
+{
+    bt_trackerclient_t* me = me_;
+
+    if (0 == bt_trackerclient_supports_uri(me_,uri))
+    {
+        return 0;
+    }
+
+    if (0 == strncmp(uri,"udp://",6))
+    {
+        return 0;
+    }
+    else if (0 == strncmp(uri,"http://",7))
+    {
+        me->uri = strdup(uri);
+        thttp_connect(me,uri+7);
+//        __get_http_tracker_request(_me, uri+7);
+        return 1;
+    }
+    else if (0 == strncmp(uri,"dht://",6))
+    {
+        return 0;
+    }
+
+    return 0;
+}
+
+
+/**
+ * Release all memory used by the tracker client
+ *
+ * @todo add destructors
+ */
+int bt_trackerclient_release(void *bto)
+{
+    free(bto);
+    return 1;
+}
+
+/*----------------------------------------------------------------------------*/
+
 
 /**
  * Connect to tracker.
@@ -378,8 +343,8 @@ static int __get_http_tracker_request(void *bto)
  * Send request to tracker and get peer listing.
  *
  * @return 1 on sucess; otherwise 0
- *
  */
+#if 0
 int bt_trackerclient_connect_to_tracker(void *bto)
 {
     bt_trackerclient_t *bt = bto;
@@ -390,8 +355,10 @@ int bt_trackerclient_connect_to_tracker(void *bto)
     assert(bt->cfg.p_peer_id);
     return __get_http_tracker_request(bt);
 }
+#endif
 
-void bt_trackerclient_step(void *bto)
+#if 0
+void bt_trackerclient_step(void *bto __attribute__((__unused__)))
 {
     bt_trackerclient_t *self = bto;
     time_t seconds;
@@ -405,6 +372,7 @@ void bt_trackerclient_step(void *bto)
         __get_http_tracker_request(self);
     }
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /**
@@ -419,3 +387,62 @@ void bt_trackerclient_set_net_funcs(void *bto, bt_net_tracker_funcs_t * net)
 }
 #endif
 
+#if 0
+
+typedef struct {
+    uint32_t len;
+    unsigned char id;
+    unsigned int bytes_read;
+    unsigned int tok_bytes_read;
+    union {
+        msg_have_t have;
+        msg_bitfield_t bitfield;
+        bt_block_t block;
+        msg_piece_t piece;
+    };
+} msg_t;
+
+static void __endmsg(msg_t* msg)
+{
+    msg->bytes_read = 0;
+    msg->id = 0;
+    msg->tok_bytes_read = 0;
+    msg->len = 0;
+}
+
+
+static int __read_byte(
+        unsigned char* in,
+        unsigned int *tot_bytes_read,
+        const unsigned char** buf,
+        unsigned int *len)
+{
+    if (*len == 0)
+        return 0;
+
+    *in = **buf;
+    *tot_bytes_read += 1;
+    *buf += 1;
+    *len -= 1;
+    return 1;
+}
+#endif
+
+void trackerclient_connected(
+    void *me_
+)
+{
+    thttp_connected(me_);
+}
+
+/**
+ * Receive this much data on this step. */
+void trackerclient_dispatch_from_buffer(
+        void *me_,
+        const unsigned char* buf,
+        unsigned int len)
+{
+    bt_trackerclient_t* me = me_;
+
+    thttp_dispatch_from_buffer(me, buf, len);
+}

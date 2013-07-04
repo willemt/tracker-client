@@ -24,3 +24,11 @@ char *url2host(const char *url);
 
 char *url2port(const char *url);
 
+void *bt_trackerclient_new(
+    bt_trackerclient_funcs_t *funcs
+    );
+
+
+int bt_trackerclient_supports_uri(void* _me, const char* uri);
+int bt_trackerclient_connect_to_uri(void* _me, const char* uri);
+
