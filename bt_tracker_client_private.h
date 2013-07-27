@@ -44,11 +44,13 @@ typedef struct
     /* so that we remember when we last requested the peer list */
     time_t last_tracker_request;
 
-    bt_trackerclient_cfg_t cfg;
+//    bt_trackerclient_cfg_t cfg;
 
     bt_trackerclient_funcs_t funcs;
 
     void *caller;
+
+    void *cfg;
 
     /** callback for initiating read of metafile */
     void (*func_read_metafile) (void *, char *, int len);

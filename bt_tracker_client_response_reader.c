@@ -96,7 +96,7 @@ static void __do_peer_list(
     }
 }
 
-int bt_trackerclient_read_tracker_response(
+int trackerclient_read_tracker_response(
     bt_trackerclient_t* me,
     char *buf,
     int len
@@ -145,7 +145,6 @@ int bt_trackerclient_read_tracker_response(
             long int interval;
 
             bencode_int_value(&benk, &interval);
-            bt_trackerclient_set_opt_int(me, "tracker_interval",interval);
         }
         /* This is an integer that indicates the number of seeders. This key is
          * OPTIONAL. */
