@@ -12,6 +12,7 @@
 #include <stdarg.h>
 
 #include <uv.h>
+#include <http_parser.h>
 
 #include "config.h"
 #include "url_encoder.h"
@@ -24,6 +25,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+
+typedef struct {
+    bt_trackerclient_t *tc;
+
+    /*  response so far */
+    char* response;
+
+    /*  response length */
+    int rlen;
+} connection_attempt_t;
 
 #if WIN32
 static char* strndup(const char* str, const unsigned int len)
@@ -48,42 +59,6 @@ static int asprintf(char **resultp, const char *format, ...)
     return 1;
 }
 #endif
-
-/**
- * Obtain hostname from URL */
-char *url2host(
-    const char *url
-)
-{
-    const char *host;
-    int len;
-
-    host = url;
-
-    if (!strncmp(url, HTTP_PREFIX, strlen(HTTP_PREFIX)))
-    {
-        host += strlen("http://");
-    }
-
-    len = strpbrk(host, ":/") - host;
-    return strndup(host, len);
-}
-
-char *url2port(
-    const char *url
-)
-{
-    const char *port, *host;
-
-    host = url;
-    if (!strncmp(url, HTTP_PREFIX, strlen(HTTP_PREFIX)))
-    {
-        host += strlen("http://");
-    }
-
-    port = strpbrk(host, ":/") + 1;
-    return strndup(port, strpbrk(port, "/") - port);
-}
 
 /**
  * @return *  1 on success otherwise, 0
@@ -154,10 +129,12 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
 
     free(info_hash_encoded);
 
+#if 1 /*  debugging */
     printf("%s\n", *request);
+#endif
 }
 
-static void write_cb(uv_write_t* req, int status) {
+static void __write_cb(uv_write_t* req, int status) {
 
   if (status)
   {
@@ -165,41 +142,73 @@ static void write_cb(uv_write_t* req, int status) {
     fprintf(stderr, "uv_write error: %s\n", uv_strerror(err));
     assert(0);
   }
-
-//  bytes_sent_done += CHUNKS_PER_WRITE * CHUNK_SIZE;
-//  write_cb_called++;
 }
 
-static void read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
+int __on_httpbody(http_parser* parser, const char *p, size_t len)
 {
-  printf("read %d\n", nread);
-
-  if (nread >= 0)
-  {
-      printf("read some data %.*s\n", buf.len, buf.base);
-  }
-  else
-  {
-    assert(uv_last_error(uv_default_loop()).code == UV_EOF);
-    printf("GOT EOF\n");
-    //uv_close((uv_handle_t*)tcp, close_cb);
-  }
-
-  free(buf.base);
+    printf("body: '%.*s'\n", len, p);
+    return 0;
 }
 
-static uv_buf_t alloc_cb(uv_handle_t* handle, size_t size)
+static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
+{
+    connection_attempt_t *ca = tcp->data;
+
+    if (nread >= 0)
+    {
+//        printf("read some data %.*s\n", buf.len, buf.base);
+        ca->response = realloc(ca->response, ca->rlen + nread);
+        strncpy(ca->response+ca->rlen, buf.base, nread);
+        ca->rlen += nread;
+    }
+    else
+    {
+        int nparsed;
+        http_parser_settings settings;
+        http_parser *parser;
+
+        memset(&settings,0,sizeof(http_parser_settings));
+
+        settings.on_body = __on_httpbody;
+
+        parser = malloc(sizeof(http_parser));
+        http_parser_init(parser, HTTP_RESPONSE);
+        nparsed = http_parser_execute(parser, &settings, ca->response, ca->rlen);
+
+        if (parser->upgrade)
+        {
+          /* handle new protocol */
+        }
+        else if (nparsed != ca->rlen)
+        {
+          /* Handle error. Usually just close the connection. */
+            printf("ERROR: couldn't parse http response: %s\n",
+                    http_errno_description(HTTP_PARSER_ERRNO(parser)));
+        }
+
+        assert(uv_last_error(uv_default_loop()).code == UV_EOF);
+        //uv_close((uv_handle_t*)tcp, close_cb);
+    }
+
+    free(buf.base);
+}
+
+static uv_buf_t __alloc_cb(uv_handle_t* handle, size_t size)
 {
   return uv_buf_init(malloc(size), size);
 }
 
-void on_connect(uv_connect_t *req, int status)
+static void __on_connect(uv_connect_t *req, int status)
 {
-    bt_trackerclient_t *me = req->data;
+    connection_attempt_t *ca = req->data;
     int r;
     char *request;
     uv_buf_t buf;
     uv_write_t *write_req;
+
+    assert(req->data);
+    assert(ca->tc);
+
 
     if (status == -1)
     {
@@ -208,19 +217,15 @@ void on_connect(uv_connect_t *req, int status)
         return;
     }
 
-    assert(req->data);
+    __build_tracker_request(ca->tc, ca->tc->uri, &request);
 
-    __build_tracker_request(
-            req->data,
-            me->uri,
-            &request);
 
     buf.base = request;
     buf.len = strlen(request);
     //req->handle = req->data;
     write_req = malloc(sizeof(uv_write_t));
-    r = uv_write(write_req, req->handle, &buf, 1, write_cb);
-    r = uv_read_start(req->handle, alloc_cb, read_cb);
+    r = uv_write(write_req, req->handle, &buf, 1, __write_cb);
+    r = uv_read_start(req->handle, __alloc_cb, __read_cb);
 }
 
 static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
@@ -237,19 +242,12 @@ static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *re
     }
 
     uv_ip4_name((struct sockaddr_in*) res->ai_addr, addr, 16);
-
     connect_req = malloc(sizeof(uv_connect_t));
     connect_req->data = req->data;
-
     socket = malloc(sizeof(uv_tcp_t));
     uv_tcp_init(uv_default_loop(), socket);
-
-    uv_tcp_connect(
-            connect_req,
-            socket,
-            *(struct sockaddr_in*) res->ai_addr,
-            on_connect
-            );
+    uv_tcp_connect(connect_req, socket,
+            *(struct sockaddr_in*) res->ai_addr, __on_connect);
 
     free(req);
     uv_freeaddrinfo(res);
@@ -265,8 +263,14 @@ int thttp_connect(
 {
     bt_trackerclient_t *me = me_;
     char *host, *port, *default_port = "80";
-    int sock;
     uv_getaddrinfo_t *req;
+    struct addrinfo hints;
+    connection_attempt_t *ca;
+    int r;
+
+    ca = malloc(sizeof(connection_attempt_t));
+    ca->tc = me;
+    ca->rlen = 0;
 
     if (0 == url2host_and_port(url,&host,&port))
     {
@@ -278,16 +282,12 @@ int thttp_connect(
         port = default_port;
     }
 
-    int r;
-    struct addrinfo hints;
-
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = 0;
-
     req = malloc(sizeof(uv_getaddrinfo_t));
-    req->data = me;
+    req->data = ca;
     r = uv_getaddrinfo(uv_default_loop(), req, __on_resolved, host, port, &hints);
 
     if (r)

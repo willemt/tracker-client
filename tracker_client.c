@@ -77,8 +77,10 @@ void *bt_trackerclient_new(
     bt_trackerclient_t *me;
 
     me = calloc(1, sizeof(bt_trackerclient_t));
+
     if (funcs)
         memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
+
     return me;
 }
 
@@ -100,7 +102,7 @@ int bt_trackerclient_supports_uri(void* _me __attribute__((__unused__)), const c
     }
     else if (0 == strncmp(uri,"dht://",6))
     {
-        return 1;
+        return 0;
     }
 
     return 0;
