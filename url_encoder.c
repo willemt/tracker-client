@@ -26,7 +26,7 @@ static char __to_hex(
     char code
 )
 {
-    static char hex[] = "0123456789abcdef";
+    static char hex[] = "0123456789ABCDEF";
 
     return hex[code & 15];
 }
@@ -69,7 +69,7 @@ char *url_encode(
 //        }
         else
         {
-//            *pbuf++ = '%';
+            *pbuf++ = '%';
             *pbuf++ = __to_hex(*pstr >> 4);
             *pbuf++ = __to_hex(*pstr & 15);
         }

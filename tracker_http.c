@@ -16,8 +16,9 @@
 
 #include "config.h"
 #include "url_encoder.h"
-#include "bt_tracker_client.h"
-#include "bt_tracker_client_private.h"
+#include "tracker_client.h"
+#include "tracker_client_private.h"
+#include "bencode.h"
 
 #define HTTP_PREFIX "http://"
 
@@ -112,7 +113,7 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
              "&port=%d"
              "&uploaded=%d"
              "&downloaded=%d"
-             "&left=%d"
+             "&left=%llu"
              "&event=started"
              "&compact=1"
              " HTTP/1.0"
@@ -124,9 +125,10 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
              config_get_int(me->cfg,"pwp_listen_port"),
              0,
              0,
-             config_get_int(me->cfg,"npieces") * config_get_int(me->cfg,"piece_length")
+             (unsigned long int)config_get_int(me->cfg,"npieces") * config_get_int(me->cfg,"piece_length")
              );
 
+    printf("%d %d\n", config_get_int(me->cfg,"npieces"), config_get_int(me->cfg,"piece_length"));
     free(info_hash_encoded);
 
 #if 1 /*  debugging */
@@ -146,7 +148,46 @@ static void __write_cb(uv_write_t* req, int status) {
 
 int __on_httpbody(http_parser* parser, const char *p, size_t len)
 {
-    printf("body: '%.*s'\n", len, p);
+    connection_attempt_t *ca = parser->data;
+//    bencode_t b;
+
+//    bencode_init(&b, p, len);
+
+#if 0
+    if (!bencode_is_dict(&b))
+    {
+        printf("ERROR: expected dictionary\n");
+        return 0;
+    }
+#endif
+
+    if (0 == trackerclient_read_tracker_response(ca->tc, p, len))
+    {
+
+    }
+
+#if 0
+    while (bencode_dict_has_next(&b))
+    {
+        int klen;
+        const char *key;
+        bencode_t bkey;
+
+        bencode_dict_get_next(&b, &bkey, &key, &klen);
+
+        if (!strncmp(key, "failure reason", klen))
+        {
+            int len2;
+            const char *val;
+
+            bencode_string_value(&bkey, &val, &len2);
+            printf("ERROR: tracker responded with failure: %.*s\n", len2, val);
+
+            ca->tc->on_work_done(ca->tc->callee, 0);
+        }
+    }
+#endif
+
     return 0;
 }
 
@@ -156,7 +197,7 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
 
     if (nread >= 0)
     {
-//        printf("read some data %.*s\n", buf.len, buf.base);
+        printf("read some data %.*s\n", buf.len, buf.base);
         ca->response = realloc(ca->response, ca->rlen + nread);
         strncpy(ca->response+ca->rlen, buf.base, nread);
         ca->rlen += nread;
@@ -172,7 +213,9 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
         settings.on_body = __on_httpbody;
 
         parser = malloc(sizeof(http_parser));
+        parser->data = ca;
         http_parser_init(parser, HTTP_RESPONSE);
+        assert(parser->data);
         nparsed = http_parser_execute(parser, &settings, ca->response, ca->rlen);
 
         if (parser->upgrade)
@@ -209,7 +252,6 @@ static void __on_connect(uv_connect_t *req, int status)
     assert(req->data);
     assert(ca->tc);
 
-
     if (status == -1)
     {
         fprintf(stderr, "connect callback error %s\n",
@@ -223,6 +265,7 @@ static void __on_connect(uv_connect_t *req, int status)
     buf.base = request;
     buf.len = strlen(request);
     //req->handle = req->data;
+    req->handle->data = req->data;
     write_req = malloc(sizeof(uv_write_t));
     r = uv_write(write_req, req->handle, &buf, 1, __write_cb);
     r = uv_read_start(req->handle, __alloc_cb, __read_cb);

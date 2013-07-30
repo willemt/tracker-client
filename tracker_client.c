@@ -41,8 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdarg.h>
 
 #include "url_encoder.h"
-#include "bt_tracker_client.h"
-#include "bt_tracker_client_private.h"
+#include "tracker_client.h"
+#include "tracker_client_private.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -70,16 +70,26 @@ static char* strndup(const char* str, const unsigned int len)
  * @param funcs The callbacks for this tracker client
  * @return tracker client on sucess; otherwise NULL
  */
-void *bt_trackerclient_new(
-    bt_trackerclient_funcs_t *funcs
+void *trackerclient_new(
+    void (*on_work_done)(void* callee, int status),
+    void (*on_add_peer)(void* callee,
+        char* peer_id,
+        unsigned int peer_id_len,
+        char* ip,
+        unsigned int ip_len,
+        unsigned int port),
+    void* callee
     )
 {
     bt_trackerclient_t *me;
 
     me = calloc(1, sizeof(bt_trackerclient_t));
+    me->on_work_done = on_work_done;
+    me->on_add_peer = on_add_peer;
+    me->callee = callee;
 
-    if (funcs)
-        memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
+//    if (funcs)
+//        memcpy(&me->funcs,funcs,sizeof(bt_trackerclient_funcs_t));
 
     return me;
 }
@@ -90,7 +100,7 @@ void *bt_trackerclient_new(
  * @param uri URI to check if we support
  * @return 1 if the uri is supported, 0 otherwise
  */
-int bt_trackerclient_supports_uri(void* _me __attribute__((__unused__)), const char* uri)
+int trackerclient_supports_uri(void* _me __attribute__((__unused__)), const char* uri)
 {
     if (0 == strncmp(uri,"udp://",6))
     {
@@ -113,11 +123,11 @@ int bt_trackerclient_supports_uri(void* _me __attribute__((__unused__)), const c
  * @param uri URI to connnect to
  * @return 1 if successful, 0 otherwise
  */
-int bt_trackerclient_connect_to_uri(void* me_, const char* uri)
+int trackerclient_connect_to_uri(void* me_, const char* uri)
 {
     bt_trackerclient_t* me = me_;
 
-    if (0 == bt_trackerclient_supports_uri(me_,uri))
+    if (0 == trackerclient_supports_uri(me_,uri))
     {
         return 0;
     }
@@ -145,7 +155,7 @@ int bt_trackerclient_connect_to_uri(void* me_, const char* uri)
  * @return 1 if successful; 0 otherwise
  * @todo add destructors
  */
-int bt_trackerclient_release(void *bto)
+int trackerclient_release(void *bto)
 {
     free(bto);
     return 1;
