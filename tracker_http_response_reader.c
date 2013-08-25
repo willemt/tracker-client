@@ -168,8 +168,6 @@ int trackerclient_read_tracker_response(
          * REQUIRED. It has the following structure: */
         else if (!strncmp(key, "peers", klen))
         {
-            printf("found peers\n");
-
             /*  compact=0 */
             if (bencode_is_list(&benk))
             {
@@ -183,9 +181,15 @@ int trackerclient_read_tracker_response(
 
                 const unsigned char *val;
 
-                bencode_string_value(&benk, (const char **) &val, &len);
+                if (0 == bencode_string_value(&benk, (const char **) &val, &len))
+                {
+                    printf("ERROR: string is invalid\n");
+                    return 0;
+                }
 
 //                if (!me->inforeader) continue;
+
+                printf("%d\n", len);
 
                 for (ii = 0; ii < len; ii += 6, val += 6)
                 {
@@ -195,10 +199,12 @@ int trackerclient_read_tracker_response(
 //                           val[3], ((int) val[4] << 8) | (int) val[5]);
 
                     sprintf(ip, "%d.%d.%d.%d", val[0], val[1], val[2], val[3]);
+
+                    if (!strcmp(ip,"0.0.0.0")) continue;
                     printf("adding peer: %s\n", ip);
                     me->on_add_peer(me->callee, NULL, 0, ip, strlen(ip),
                                        ((int) val[4] << 8) | (int) val[5]);
-                    printf("added peer: %s\n", ip);
+                    break;
                 }
             }
         }

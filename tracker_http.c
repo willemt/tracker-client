@@ -136,8 +136,8 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
 #endif
 }
 
-static void __write_cb(uv_write_t* req, int status) {
-
+static void __write_cb(uv_write_t* req, int status)
+{
   if (status)
   {
     uv_err_t err = uv_last_error(uv_default_loop());
@@ -260,7 +260,6 @@ static void __on_connect(uv_connect_t *req, int status)
     }
 
     __build_tracker_request(ca->tc, ca->tc->uri, &request);
-
 
     buf.base = request;
     buf.len = strlen(request);

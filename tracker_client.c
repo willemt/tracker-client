@@ -54,17 +54,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* for vargs */
 #include <stdarg.h>
 
-#if WIN32
-static char* strndup(const char* str, const unsigned int len)
-{
-    char* new;
-
-    new = malloc(len+1);
-    strncpy(new,str,len);
-    return new;
-}
-#endif
-
 /**
  * Initiliase the tracker client
  * @param funcs The callbacks for this tracker client
@@ -93,7 +82,6 @@ void *trackerclient_new(
 
     return me;
 }
-
 
 /**
  * Tell if the uri is supported or not.
