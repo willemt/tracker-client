@@ -125,41 +125,36 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
              config_get_int(me->cfg,"pwp_listen_port"),
              0,
              0,
-             (unsigned long int)config_get_int(me->cfg,"npieces") * config_get_int(me->cfg,"piece_length")
+             (unsigned long int)config_get_int(me->cfg,"npieces") * 
+                config_get_int(me->cfg,"piece_length")
              );
 
-    printf("%d %d\n", config_get_int(me->cfg,"npieces"), config_get_int(me->cfg,"piece_length"));
+#if 0 /*  debugging */
+    printf("%d %d\n",
+            config_get_int(me->cfg,"npieces"),
+            config_get_int(me->cfg,"piece_length"));
+#endif
+
     free(info_hash_encoded);
 
-#if 1 /*  debugging */
+#if 0 /*  debugging */
     printf("%s\n", *request);
 #endif
 }
 
 static void __write_cb(uv_write_t* req, int status)
 {
-  if (status)
-  {
-    uv_err_t err = uv_last_error(uv_default_loop());
-    fprintf(stderr, "uv_write error: %s\n", uv_strerror(err));
-    assert(0);
-  }
+    if (status)
+    {
+        uv_err_t err = uv_last_error(uv_default_loop());
+        fprintf(stderr, "uv_write error: %s\n", uv_strerror(err));
+        assert(0);
+    }
 }
 
 int __on_httpbody(http_parser* parser, const char *p, size_t len)
 {
     connection_attempt_t *ca = parser->data;
-//    bencode_t b;
-
-//    bencode_init(&b, p, len);
-
-#if 0
-    if (!bencode_is_dict(&b))
-    {
-        printf("ERROR: expected dictionary\n");
-        return 0;
-    }
-#endif
 
     if (0 == trackerclient_read_tracker_response(ca->tc, p, len))
     {
@@ -197,10 +192,11 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
 
     if (nread >= 0)
     {
-        printf("read some data %.*s\n", buf.len, buf.base);
+        //printf("read some data %lx %.*s\n", (void*)ca, buf.len, buf.base);
         ca->response = realloc(ca->response, ca->rlen + nread);
-        strncpy(ca->response+ca->rlen, buf.base, nread);
+        memcpy(ca->response + ca->rlen, buf.base, nread);
         ca->rlen += nread;
+        ca->response[ca->rlen] = 0;
     }
     else
     {
@@ -310,7 +306,7 @@ int thttp_connect(
     connection_attempt_t *ca;
     int r;
 
-    ca = malloc(sizeof(connection_attempt_t));
+    ca = calloc(1,sizeof(connection_attempt_t));
     ca->tc = me;
     ca->rlen = 0;
 

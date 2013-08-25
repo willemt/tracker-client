@@ -56,7 +56,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
  * Initiliase the tracker client
- * @param funcs The callbacks for this tracker client
  * @return tracker client on sucess; otherwise NULL
  */
 void *trackerclient_new(
