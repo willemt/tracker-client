@@ -201,10 +201,9 @@ int trackerclient_read_tracker_response(
                     sprintf(ip, "%d.%d.%d.%d", val[0], val[1], val[2], val[3]);
 
                     if (!strcmp(ip,"0.0.0.0")) continue;
-                    printf("adding peer: %s\n", ip);
                     me->on_add_peer(me->callee, NULL, 0, ip, strlen(ip),
                                        ((int) val[4] << 8) | (int) val[5]);
-                    break;
+//                    if (ii == 6) break;
                 }
             }
         }

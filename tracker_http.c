@@ -255,12 +255,15 @@ static void __on_connect(uv_connect_t *req, int status)
         return;
     }
 
-    __build_tracker_request(ca->tc, ca->tc->uri, &request);
-
-    buf.base = request;
-    buf.len = strlen(request);
     //req->handle = req->data;
     req->handle->data = req->data;
+
+    /*  prepare request to write */
+    __build_tracker_request(ca->tc, ca->tc->uri, &request);
+    buf.base = request;
+    buf.len = strlen(request);
+
+    /*  write */
     write_req = malloc(sizeof(uv_write_t));
     r = uv_write(write_req, req->handle, &buf, 1, __write_cb);
     r = uv_read_start(req->handle, __alloc_cb, __read_cb);
