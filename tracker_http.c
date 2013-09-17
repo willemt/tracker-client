@@ -146,8 +146,10 @@ static void __write_cb(uv_write_t* req, int status)
 {
     if (status)
     {
+#if 0
         uv_err_t err = uv_last_error(uv_default_loop());
         fprintf(stderr, "uv_write error: %s\n", uv_strerror(err));
+#endif
         assert(0);
     }
 }
@@ -186,7 +188,7 @@ int __on_httpbody(http_parser* parser, const char *p, size_t len)
     return 0;
 }
 
-static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
+static void __read_cb(uv_stream_t* tcp, ssize_t nread, const uv_buf_t* buf)
 {
     connection_attempt_t *ca = tcp->data;
 
@@ -194,7 +196,7 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
     {
         //printf("read some data %lx %.*s\n", (void*)ca, buf.len, buf.base);
         ca->response = realloc(ca->response, ca->rlen + nread);
-        memcpy(ca->response + ca->rlen, buf.base, nread);
+        memcpy(ca->response + ca->rlen, buf->base, nread);
         ca->rlen += nread;
         ca->response[ca->rlen] = 0;
     }
@@ -225,16 +227,17 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, uv_buf_t buf)
                     http_errno_description(HTTP_PARSER_ERRNO(parser)));
         }
 
-        assert(uv_last_error(uv_default_loop()).code == UV_EOF);
+        //assert(uv_last_error(uv_default_loop()).code == UV_EOF);
         //uv_close((uv_handle_t*)tcp, close_cb);
     }
 
-    free(buf.base);
+    free(buf->base);
 }
 
-static uv_buf_t __alloc_cb(uv_handle_t* handle, size_t size)
+static void __alloc_cb(uv_handle_t* handle, size_t size, uv_buf_t* buf)
 {
-  return uv_buf_init(malloc(size), size);
+    buf->len = size;
+    buf->base = malloc(size);
 }
 
 static void __on_connect(uv_connect_t *req, int status)
@@ -250,8 +253,8 @@ static void __on_connect(uv_connect_t *req, int status)
 
     if (status == -1)
     {
-        fprintf(stderr, "connect callback error %s\n",
-                uv_err_name(uv_last_error(uv_default_loop())));
+//        fprintf(stderr, "connect callback error %s\n",
+//                uv_err_name(uv_last_error(uv_default_loop())));
         return;
     }
 
@@ -269,29 +272,35 @@ static void __on_connect(uv_connect_t *req, int status)
     r = uv_read_start(req->handle, __alloc_cb, __read_cb);
 }
 
-static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *res)
+static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *addr)
 {
-    char addr[17] = {'\0'};
-    uv_tcp_t *socket;
-    uv_connect_t *connect_req;
+    uv_tcp_t *t;
+    uv_connect_t *c;
 
     if (status == -1)
     {
-        fprintf(stderr, "getaddrinfo callback error %s\n",
-                uv_err_name(uv_last_error(uv_default_loop())));
+//        fprintf(stderr, "getaddrinfo callback error %s\n",
+//                uv_err_name(uv_last_error(uv_default_loop())));
         return;
     }
 
-    uv_ip4_name((struct sockaddr_in*) res->ai_addr, addr, 16);
-    connect_req = malloc(sizeof(uv_connect_t));
-    connect_req->data = req->data;
-    socket = malloc(sizeof(uv_tcp_t));
-    uv_tcp_init(uv_default_loop(), socket);
-    uv_tcp_connect(connect_req, socket,
-            *(struct sockaddr_in*) res->ai_addr, __on_connect);
+    t = malloc(sizeof(uv_tcp_t));
+    if (0 != uv_tcp_init(uv_default_loop(), t))
+    {
+        printf("FAILED TCP socket creation\n");
+    }
+    
+    c = malloc(sizeof(uv_connect_t));
+    c->data = req->data;
+    if (0 != uv_tcp_connect(c, t, addr->ai_addr, __on_connect))
+    {
+        printf("Connection failed\n");
+//        fprintf(stderr, "FAILED connection creation %s\n",
+//                uv_err_name(uv_last_error(uv_default_loop())));
+    }
 
     free(req);
-    uv_freeaddrinfo(res);
+    uv_freeaddrinfo(addr);
 }
 
 /**
@@ -327,14 +336,16 @@ int thttp_connect(
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = 0;
+
     req = malloc(sizeof(uv_getaddrinfo_t));
     req->data = ca;
-    r = uv_getaddrinfo(uv_default_loop(), req, __on_resolved, host, port, &hints);
-
-    if (r)
+    
+    if ((r = uv_getaddrinfo(uv_default_loop(),
+                    req, __on_resolved, host, port, &hints)))
     {
-        fprintf(stderr, "getaddrinfo call error %s\n",
-                uv_err_name(uv_last_error(uv_default_loop())));
+        printf("failed\n");
+//        fprintf(stderr, "getaddrinfo call error %s\n",
+//                uv_err_name(uv_last_error(uv_default_loop())));
         return 0;
     }
 
