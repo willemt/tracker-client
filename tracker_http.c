@@ -129,17 +129,7 @@ static void __build_tracker_request(bt_trackerclient_t* me, const char* url, cha
                 config_get_int(me->cfg,"piece_length")
              );
 
-#if 0 /*  debugging */
-    printf("%d %d\n",
-            config_get_int(me->cfg,"npieces"),
-            config_get_int(me->cfg,"piece_length"));
-#endif
-
     free(info_hash_encoded);
-
-#if 0 /*  debugging */
-    printf("%s\n", *request);
-#endif
 }
 
 static void __write_cb(uv_write_t* req, int status)
@@ -194,7 +184,6 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, const uv_buf_t* buf)
 
     if (nread >= 0)
     {
-        //printf("read some data %lx %.*s\n", (void*)ca, buf.len, buf.base);
         ca->response = realloc(ca->response, ca->rlen + nread);
         memcpy(ca->response + ca->rlen, buf->base, nread);
         ca->rlen += nread;
@@ -343,7 +332,6 @@ int thttp_connect(
     if ((r = uv_getaddrinfo(uv_default_loop(),
                     req, __on_resolved, host, port, &hints)))
     {
-        printf("failed\n");
 //        fprintf(stderr, "getaddrinfo call error %s\n",
 //                uv_err_name(uv_last_error(uv_default_loop())));
         return 0;
@@ -365,5 +353,4 @@ void thttp_dispatch_from_buffer(
 {
 //    bt_trackerclient_t* me = _me;
 //    httptracker_dispatch_from_buffer(me->ht);
-//    printf("%.*s\n", len, buf);
 }

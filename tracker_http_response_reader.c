@@ -119,7 +119,7 @@ int trackerclient_read_tracker_response(
 
         if (0 == bencode_dict_get_next(&ben, &benk, &key, &klen))
         {
-            printf("ERROR\n");
+            // ERROR dict is invalid
             return 0;
         }
 
@@ -183,27 +183,19 @@ int trackerclient_read_tracker_response(
 
                 if (0 == bencode_string_value(&benk, (const char **) &val, &len))
                 {
-                    printf("ERROR: string is invalid\n");
+                    // ERROR: string is invalid
                     return 0;
                 }
-
-//                if (!me->inforeader) continue;
-
-                printf("%d\n", len);
 
                 for (ii = 0; ii < len; ii += 6, val += 6)
                 {
                     char ip[32];
-
-//                  printf("adding ip: %d.%d.%d.%d:%d", val[0], val[1], val[2],
-//                           val[3], ((int) val[4] << 8) | (int) val[5]);
 
                     sprintf(ip, "%d.%d.%d.%d", val[0], val[1], val[2], val[3]);
 
                     if (!strcmp(ip,"0.0.0.0")) continue;
                     me->on_add_peer(me->callee, NULL, 0, ip, strlen(ip),
                                        ((int) val[4] << 8) | (int) val[5]);
-//                    if (ii == 6) break;
                 }
             }
         }
