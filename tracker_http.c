@@ -184,7 +184,7 @@ static void __read_cb(uv_stream_t* tcp, ssize_t nread, const uv_buf_t* buf)
 
     if (nread >= 0)
     {
-        ca->response = realloc(ca->response, ca->rlen + nread);
+        ca->response = realloc(ca->response, ca->rlen + nread + 1);
         memcpy(ca->response + ca->rlen, buf->base, nread);
         ca->rlen += nread;
         ca->response[ca->rlen] = 0;
