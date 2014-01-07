@@ -69,6 +69,7 @@ int trackerclient_supports_uri(void* _me __attribute__((__unused__)), const char
 {
     if (0 == strncmp(uri,"udp://",6))
     {
+        // TODO
         return 0;
     }
     else if (0 == strncmp(uri,"http://",7))
@@ -77,6 +78,7 @@ int trackerclient_supports_uri(void* _me __attribute__((__unused__)), const char
     }
     else if (0 == strncmp(uri,"dht://",6))
     {
+        // TODO
         return 0;
     }
 
@@ -99,6 +101,7 @@ int trackerclient_connect_to_uri(void* me_, const char* uri)
 
     if (0 == strncmp(uri,"udp://",6))
     {
+        // TODO
         return 0;
     }
     else if (0 == strncmp(uri,"http://",7))
@@ -109,6 +112,7 @@ int trackerclient_connect_to_uri(void* me_, const char* uri)
     }
     else if (0 == strncmp(uri,"dht://",6))
     {
+        // TODO
         return 0;
     }
 
@@ -139,7 +143,6 @@ void trackerclient_set_cfg(
     bt_trackerclient_t* me = me_;
 
     assert(cfg);
-
     me->cfg = cfg;
 }
 

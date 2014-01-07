@@ -302,11 +302,8 @@ int thttp_connect(
 {
     bt_trackerclient_t *me = me_;
     char *host, *port, *default_port = "80";
-    uv_getaddrinfo_t *req;
-    struct addrinfo hints;
-    connection_attempt_t *ca;
-    int r;
 
+    connection_attempt_t *ca;
     ca = calloc(1,sizeof(connection_attempt_t));
     ca->tc = me;
     ca->rlen = 0;
@@ -321,14 +318,18 @@ int thttp_connect(
         port = default_port;
     }
 
+    struct addrinfo hints;
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = 0;
 
+    uv_getaddrinfo_t *req;
     req = malloc(sizeof(uv_getaddrinfo_t));
     req->data = ca;
     
+    int r;
+
     if ((r = uv_getaddrinfo(uv_default_loop(),
                     req, __on_resolved, host, port, &hints)))
     {
