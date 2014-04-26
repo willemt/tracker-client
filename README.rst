@@ -3,7 +3,7 @@ CTrackerClient
 
 What?
 -----
-A library for connecting to BitTorrent trackers
+A library for managing connections with BitTorrent trackers
 
 How does it work?
 -----------------
