@@ -37,30 +37,6 @@ typedef struct {
     int rlen;
 } connection_attempt_t;
 
-#if WIN32
-static char* strndup(const char* str, const unsigned int len)
-{
-    char* new;
-
-    new = malloc(len+1);
-    strncpy(new,str,len);
-    new[len] = 0;
-    return new;
-}
-
-static int asprintf(char **resultp, const char *format, ...)
-{
-    char buf[1024];
-    va_list args;
-
-    va_start (args, format);
-    vsprintf(buf, format, args);
-    *resultp = strdup(buf);
-    va_end (args);
-    return 1;
-}
-#endif
-
 /**
  * @return *  1 on success otherwise, 0
  */
