@@ -63,4 +63,9 @@ void thttp_connected(void *me_);
 
 int net_tcp_connect(const char *host, const char *port);
 
+int trackerclient_read_tracker_response(
+    trackerclient_t* me,
+    const char *buf,
+    int len);
+
 #endif /* TRACKER_CLIENT_PRIVATE_H */

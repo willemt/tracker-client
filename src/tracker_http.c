@@ -1,3 +1,15 @@
+
+/**
+ * Copyright (c) 2011, Willem-Hendrik Thiart
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file. 
+
+ * @file
+ * @brief Manage connection with tracker
+ * @author  Willem Thiart himself@willemthiart.com
+ * @version 0.1
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -45,7 +57,7 @@ int url2host_and_port(
     char** port_o
 )
 {
-    const char* ptr = url, *host, *port;
+    const char* host, *port;
 
     host = url;
 
@@ -100,7 +112,7 @@ static void __build_tracker_request(trackerclient_t* me, const char* url, char *
              config_get_int(me->cfg,"pwp_listen_port"),
              0,
              0,
-             (unsigned long int)config_get_int(me->cfg,"npieces") * 
+             (unsigned long long)config_get_int(me->cfg,"npieces") * 
                 config_get_int(me->cfg,"piece_length")
              );
 
