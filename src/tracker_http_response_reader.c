@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time_t.h>
+#include <time.h>
 
 #include "bencode.h"
 #include "tracker_client.h"
@@ -76,7 +76,7 @@ static void __do_peer_list(
 
 int trackerclient_read_tracker_response(
     trackerclient_t* me,
-    char *buf,
+    const char *buf,
     int len
 )
 {

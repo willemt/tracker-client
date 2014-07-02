@@ -4,7 +4,7 @@ CC     = gcc
 SHELL  = /bin/bash
 INCLUDES = $(shell ls deps | sed 's/^/-Ideps\//')
 DEPS_SRC = $(shell find deps -name *.c)
-CCFLAGS = -g -O2 -Wall -Werror -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS) -I$(INCLUDES) -Iinclude
+CCFLAGS = -g -O2 -Wall -Werror -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS) -I$(INCLUDES) -Iinclude -Itests
 
 
 ifeq ($(OS),Windows_NT)
