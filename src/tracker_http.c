@@ -28,7 +28,7 @@
 #include <ctype.h>
 
 typedef struct {
-    bt_trackerclient_t *tc;
+    trackerclient_t *tc;
 
     /*  response so far */
     char* response;
@@ -38,8 +38,7 @@ typedef struct {
 } connection_attempt_t;
 
 /**
- * @return *  1 on success otherwise, 0
- */
+ * @return *  1 on success otherwise, 0 */
 int url2host_and_port(
     const char *url,
     char** host_o,
@@ -71,16 +70,16 @@ int url2host_and_port(
     return 1;
 }
 
-static void __build_tracker_request(bt_trackerclient_t* me, const char* url, char **request)
+static void __build_tracker_request(trackerclient_t* me, const char* url, char **request)
 {
     char *info_hash_encoded;
 
-    assert(config_get(me->cfg,"piece_length"));
-    assert(config_get(me->cfg,"infohash"));
-    assert(config_get(me->cfg,"my_peerid"));
-    assert(config_get(me->cfg,"npieces"));
+    assert(config_get(me->cfg, "piece_length"));
+    assert(config_get(me->cfg, "infohash"));
+    assert(config_get(me->cfg, "my_peerid"));
+    assert(config_get(me->cfg, "npieces"));
 
-    info_hash_encoded = url_encode(config_get(me->cfg,"infohash"), 20);
+    info_hash_encoded = url_encode(config_get(me->cfg, "infohash"), 20);
 
     asprintf(request,
              "GET %s"
@@ -268,15 +267,11 @@ static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *ad
     uv_freeaddrinfo(addr);
 }
 
-/**
- * Connect to URL
- * @return 1 on success; 0 otherwise
- */
 int thttp_connect(
         void *me_,
         const char* url)
 {
-    bt_trackerclient_t *me = me_;
+    trackerclient_t *me = me_;
     char *host, *port, *default_port = "80";
 
     connection_attempt_t *ca;
@@ -309,25 +304,21 @@ int thttp_connect(
     if ((r = uv_getaddrinfo(uv_default_loop(),
                     req, __on_resolved, host, port, &hints)))
     {
-//        fprintf(stderr, "getaddrinfo call error %s\n",
-//                uv_err_name(uv_last_error(uv_default_loop())));
+#if 0
+        fprintf(stderr, "getaddrinfo call error %s\n",
+                uv_err_name(uv_last_error(uv_default_loop())));
         return 0;
+#endif
     }
 
     return 1;
 }
 
-/**
- * Receive this much data on this step.
- * @param me_ Tracker client
- * @param buf Buffer to dispatch events from
- * @param len Length of buffer
- */
+#if 0
 void thttp_dispatch_from_buffer(
         void *me_ __attribute__((__unused__)),
         const unsigned char* buf,
         unsigned int len)
 {
-//    bt_trackerclient_t* me = _me;
-//    httptracker_dispatch_from_buffer(me->ht);
 }
+#endif

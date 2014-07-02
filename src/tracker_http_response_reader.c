@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "tracker_client_private.h"
 
 static void __do_peer_list(
-    bt_trackerclient_t* me,
+    trackerclient_t* me,
     bencode_t * list
 )
 {
@@ -97,7 +97,7 @@ static void __do_peer_list(
 }
 
 int trackerclient_read_tracker_response(
-    bt_trackerclient_t* me,
+    trackerclient_t* me,
     char *buf,
     int len
 )

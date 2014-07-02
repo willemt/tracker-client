@@ -1,3 +1,5 @@
+#ifndef TRACKER_CLIENT_PRIVATE_H
+#define TRACKER_CLIENT_PRIVATE_H
 
 typedef struct
 {
@@ -6,34 +8,6 @@ typedef struct
     /* number of pieces (from protocol) */
     int npieces;
 } bt_piece_info_t;
-
-#if 0
-typedef struct
-{
-//    int select_timeout_msec;
-//    int max_peer_connections;
-//    int max_active_peers;
-//    int max_cache_mem;
-    int tracker_scrape_interval;
-    /*  don't seed, shutdown when complete */
-//    int o_shutdown_when_complete;
-    /*  the size of the piece, etc */
-    bt_piece_info_t pinfo;
-    /*  how many seconds between tracker scrapes */
-//    int o_tracker_scrape_interval;
-    /* listen for pwp messages on this port */
-    int pwp_listen_port;
-    /*  this holds my IP. I figure it out */
-    char *my_ip;
-    /* sha1 hash of the info_hash */
-    char *info_hash;
-
-    /* 20-byte self-designated ID of the peer */
-    char *my_peer_id;
-
-//    char *tracker_url;
-} bt_trackerclient_cfg_t;
-#endif
 
 typedef struct
 {
@@ -62,19 +36,31 @@ typedef struct
     void (*func_read_metafile) (void *, char *, int len);
     void *udata;
 
-} bt_trackerclient_t;
+} trackerclient_t;
 
 int bt_trackerclient_read_tracker_response(
-    bt_trackerclient_t* me,
+    trackerclient_t* me,
     char *buf,
     int len);
 
+/**
+ * Receive this much data on this step.
+ * @param me_ Tracker client
+ * @param buf Buffer to dispatch events from
+ * @param len Length of buffer */
 void thttp_dispatch_from_buffer(
         void *me_,
         const unsigned char* buf,
         unsigned int len);
 
+/**
+ * Connect to URL
+ * @return 1 on success; 0 otherwise */
+int thttp_connect(void *me_, const char* url);
+
+
 void thttp_connected(void *me_);
 
-
 int net_tcp_connect(const char *host, const char *port);
+
+#endif /* TRACKER_CLIENT_PRIVATE_H */
