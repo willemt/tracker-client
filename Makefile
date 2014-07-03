@@ -3,7 +3,7 @@ GCOV_CCFLAGS = -fprofile-arcs -ftest-coverage
 CC     = gcc
 SHELL  = /bin/bash
 INCLUDES = $(shell ls deps | sed 's/^/-Ideps\//')
-DEPS_SRC = $(shell find deps -name *.c)
+DEPS_SRC = $(shell find deps | grep \.c$$)
 CCFLAGS = -g -O2 -Wall -Werror -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS) -I$(INCLUDES) -Iinclude -Itests
 
 
@@ -43,8 +43,8 @@ main.c:
 	sh tests/make-tests.sh tests/test_*.c > main.c
 
 test: $(DEPS_SRC) src/tracker_client.c src/tracker_http.c src/tracker_http_response_reader.c tests/CuTest.c main.c
-	$(CC) $(CCFLAGS) -o $@ $^
-	./tests
+	$(CC) $^ $(CCFLAGS) #-o $@ 
+	./test
 	#gcov main.c test_bt_tracker_client.c 
 
 clean:

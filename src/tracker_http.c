@@ -42,10 +42,10 @@
 typedef struct {
     trackerclient_t *tc;
 
-    /*  response so far */
+    /* response so far */
     char* response;
 
-    /*  response length */
+    /* response length */
     int rlen;
 } connection_attempt_t;
 
@@ -245,7 +245,9 @@ static void __on_connect(uv_connect_t *req, int status)
     /*  write */
     write_req = malloc(sizeof(uv_write_t));
     r = uv_write(write_req, req->handle, &buf, 1, __write_cb);
-    r = uv_read_start(req->handle, __alloc_cb, __read_cb);
+    r = uv_read_start(req->handle,
+                     (uv_alloc_cb)__alloc_cb,
+                     (uv_read_cb)__read_cb);
 }
 
 static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *addr)
@@ -268,7 +270,10 @@ static void __on_resolved(uv_getaddrinfo_t *req, int status, struct addrinfo *ad
     
     c = malloc(sizeof(uv_connect_t));
     c->data = req->data;
-    if (0 != uv_tcp_connect(c, t, addr->ai_addr, __on_connect))
+
+    struct sockaddr_in *sockaddr = (struct sockaddr_in*)addr->ai_addr;
+
+    if (0 != uv_tcp_connect(c, t, *sockaddr, __on_connect))
     {
         printf("Connection failed\n");
 //        fprintf(stderr, "FAILED connection creation %s\n",
