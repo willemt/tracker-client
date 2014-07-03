@@ -27,7 +27,10 @@
 #include <http_parser.h>
 
 #include "config.h"
-#include "url_encoder.h"
+
+/* for uri encoding */
+#include "uri.h"
+
 #include "tracker_client.h"
 #include "tracker_client_private.h"
 #include "bencode.h"
@@ -91,7 +94,8 @@ static void __build_tracker_request(trackerclient_t* me, const char* url, char *
     assert(config_get(me->cfg, "my_peerid"));
     assert(config_get(me->cfg, "npieces"));
 
-    info_hash_encoded = url_encode(config_get(me->cfg, "infohash"), 20);
+//    info_hash_encoded = url_encode(config_get(me->cfg, "infohash"), 20);
+    info_hash_encoded = uri_encode(config_get(me->cfg, "infohash"));
 
     asprintf(request,
              "GET %s"

@@ -121,6 +121,7 @@ void trackerclient_set_cfg(
     me->cfg = cfg;
 }
 
+#if 0
 void trackerclient_dispatch_from_buffer(
         void *me_,
         const unsigned char* buf,
@@ -131,7 +132,6 @@ void trackerclient_dispatch_from_buffer(
     thttp_dispatch_from_buffer(me, buf, len);
 }
 
-#if 0
 void trackerclient_periodic(void *bto __attribute__((__unused__)))
 {
     trackerclient_t *self = bto;

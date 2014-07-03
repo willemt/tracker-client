@@ -4,6 +4,7 @@ CC     = gcc
 SHELL  = /bin/bash
 INCLUDES = $(shell ls deps | sed 's/^/-Ideps\//')
 DEPS_SRC = $(shell find deps | grep \.c$$)
+LIBS = -luv
 CCFLAGS = -g -O2 -Wall -Werror -fno-omit-frame-pointer -fno-common -fsigned-char $(GCOV_CCFLAGS) -I$(INCLUDES) -Iinclude -Itests
 
 
@@ -43,9 +44,8 @@ main.c:
 	sh tests/make-tests.sh tests/test_*.c > main.c
 
 test: $(DEPS_SRC) src/tracker_client.c src/tracker_http.c src/tracker_http_response_reader.c tests/CuTest.c main.c
-	$(CC) $^ $(CCFLAGS) #-o $@ 
+	$(CC) $^ $(CCFLAGS) $(LIBS) -o $@ 
 	./test
-	#gcov main.c test_bt_tracker_client.c 
 
 clean:
 	rm -f main.c *.o test $(GCOV_OUTPUT)
