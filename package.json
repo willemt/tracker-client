@@ -16,6 +16,6 @@
         "willemt/heapless-bencode": "*",
         "clibs/http-parser": "*",
         "clibs/strndup": "*",
-        "littlstar/uri": "*"
+        "littlstar/uri.c": "*"
   }
 }
